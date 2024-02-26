@@ -229,8 +229,10 @@ public:
     using fs_path = boost::filesystem::path;
 
 
-
+    Vec3d bed_dims;
     int get_load_offset();
+    void set_bed_dims(Vec3d bed_dims);
+    const Vec3d get_bed_dims();
     const LoadStrategy& get_load_strategy();
     //std::vector<ModelObject> idex_temp;
     Plater(wxWindow *parent, MainFrame *main_frame);
@@ -812,7 +814,8 @@ public:
 private:
     struct priv;
     std::unique_ptr<priv> p;
-    int load_offset {0}; //Meta3D: Indexing offset between normal index and idex index
+    int load_offset {0};
+    int idex_load_count {0}; //Meta3D: Indexing offset between normal index and idex index
 
 
     // Set true during PopupMenu() tracking to suppress immediate error message boxes.

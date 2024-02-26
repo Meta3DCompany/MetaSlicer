@@ -381,7 +381,7 @@ ModelObject* Model::add_object(const char *name, const char *path, const Triangl
     new_object->invalidate_bounding_box();
     return new_object;
 }
-
+//Meta3D : Here!
 ModelObject* Model::add_object(const char *name, const char *path, TriangleMesh &&mesh)
 {
     ModelObject* new_object = new ModelObject(this);

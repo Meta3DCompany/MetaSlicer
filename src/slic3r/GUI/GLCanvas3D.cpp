@@ -3146,7 +3146,10 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
         switch (keyCode)
         {
         //case WXK_BACK:
-        case WXK_DELETE: { post_event(SimpleEvent(EVT_GLTOOLBAR_DELETE)); break; }
+        case WXK_DELETE: { 
+            post_event(SimpleEvent(EVT_GLTOOLBAR_DELETE)); 
+            break; 
+            }
         // BBS
 #ifdef __APPLE__
         case WXK_BACK: { post_event(SimpleEvent(EVT_GLTOOLBAR_DELETE)); break; }
@@ -4063,7 +4066,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                         bool ctrl_down = evt.CmdDown();
 
                         Selection::IndicesList curr_idxs = m_selection.get_volume_idxs();
-                        //wxGetApp().mainframe->output_through_framename(static_cast<double>(volume_idx));
+                        
                         if (already_selected && ctrl_down)
                         {
                            m_selection.remove(volume_idx);
@@ -4501,7 +4504,7 @@ void GLCanvas3D::do_move(const std::string& snapshot_type)
         wxGetApp().plater()->take_snapshot(snapshot_type);
 
     const LoadStrategy strategy = wxGetApp().plater()->get_load_strategy();
-    bool if_idex = wxGetApp().plater()->get_idex_copy();
+    bool if_idex = wxGetApp().plater()->get_idex_copy() ;
     int div;
 
     if(if_idex)
@@ -4519,31 +4522,34 @@ void GLCanvas3D::do_move(const std::string& snapshot_type)
 
     Selection::EMode selection_mode = m_selection.get_mode();
     int load_offset = wxGetApp().plater()->get_load_offset();
+    Vec3d bed_dims = wxGetApp().plater()->get_bed_dims();
+
+    
     for (int i = 0; i< m_volumes.volumes.size()/div; i++) {
+
        
         const GLVolume* v = m_volumes.volumes[i];
         int object_idx = v->object_idx();
         int instance_idx = v->instance_idx();
         int volume_idx = v->volume_idx();
-        //wxGetApp().mainframe->output_through_framename(m_volumes.volumes.size());
+        
 
         if (volume_idx < 0)
             continue;
 
         std::pair<int, int> done_id(object_idx, instance_idx);
-        //wxGetApp().mainframe->output_through_framename(div); 
+        
         if (0 <= object_idx && object_idx < (int)m_model->objects.size()) {
             
             done.insert(done_id);
             ModelObject *idex_object;
+          
             // Move instances/volumes
             ModelObject* model_object = m_model->objects[object_idx];
             if(if_idex)
                 idex_object= m_model->objects[object_idx+wxGetApp().plater()->get_load_offset()];
-            //ModelObject* idex_object = m_model->objects[object_idx+1];
             
-            //ModelObject* idex_object = m_model->o
-            
+                
             if (model_object != nullptr ) {
                  
                 if (selection_mode == Selection::Instance)
@@ -4553,10 +4559,16 @@ void GLCanvas3D::do_move(const std::string& snapshot_type)
                     //if(250-v->get_instance_offset().x()>125){ //Meta3D: This statement will change, holder for logic check
                     model_object->instances[instance_idx]->set_transformation(v->get_instance_transformation());
 
-                    if(strategy== LoadStrategy::IdexMirror)
-                        idex_object->instances[instance_idx]->set_offset({250-v->get_instance_offset().x(),v->get_instance_offset().y(),v->get_instance_offset().z()});
-                    else if(strategy == LoadStrategy::IdexCopy)
-                        idex_object->instances[instance_idx]->set_offset({125+v->get_instance_offset().x(),v->get_instance_offset().y(),v->get_instance_offset().z()});
+                    if(strategy== LoadStrategy::IdexMirror){
+                        idex_object->instances[instance_idx]->set_offset({bed_dims.x()-v->get_instance_offset().x(),v->get_instance_offset().y(),v->get_instance_offset().z()});
+                        //if(wxGetApp().plater()->get_load_offset()>0)
+                            //idex_load_object->instances[instance_idx]->set_offset({250-v->get_instance_offset().x(),v->get_instance_offset().y(),v->get_instance_offset().z()});
+                    }
+                    else if(strategy == LoadStrategy::IdexCopy){
+                        idex_object->instances[instance_idx]->set_offset({(bed_dims.x()/2)+v->get_instance_offset().x(),v->get_instance_offset().y(),v->get_instance_offset().z()});
+                        //if(wxGetApp().plater()->get_load_offset()>0)
+                            //idex_load_object->instances[instance_idx]->set_offset({250-v->get_instance_offset().x(),v->get_instance_offset().y(),v->get_instance_offset().z()});
+                    }
 
 
                     //}
@@ -6591,7 +6603,7 @@ void GLCanvas3D::_picking_pass()
                             
                        // }
                         
-                        //wxGetApp().mainframe->output_through_framename(unselectable_id);
+                      
                     }
                     m_gizmos.set_hover_id(-1);
                 }

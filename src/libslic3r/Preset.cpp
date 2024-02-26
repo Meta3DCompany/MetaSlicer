@@ -1743,7 +1743,6 @@ void PresetCollection::update_after_user_presets_loaded()
 {
     lock();
     std::string     selected_name = get_selected_preset_name();
-    //wxGetApp().mainframe->output_through_framename(selected_name);
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(", before sort, type %1%, selected_idx %2%, selected_name %3%") %m_type %m_idx_selected %selected_name;
     std::sort(m_presets.begin() + m_num_default_presets, m_presets.end());
     this->select_preset_by_name(selected_name, false);

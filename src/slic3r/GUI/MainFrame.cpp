@@ -746,7 +746,7 @@ void MainFrame::update_layout()
     case ESettingsLayout::Old:
     {
         m_plater->Reparent(m_tabpanel);
-        m_tabpanel->InsertPage(tp3DEditor, m_plater, _L("Prepare xdxd"), std::string("tab_3d_active"), std::string("tab_3d_active"), false);
+        m_tabpanel->InsertPage(tp3DEditor, m_plater, _L("Prepare"), std::string("tab_3d_active"), std::string("tab_3d_active"), false);
         m_tabpanel->InsertPage(tpPreview, m_plater, _L("Preview"), std::string("tab_preview_active"), std::string("tab_preview_active"), false);
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 0);
 
@@ -1919,23 +1919,23 @@ void MainFrame::update_side_button_style()
     // m_publish_btn->SetTextColor(StateColor::darkModeColorFor("#FFFFFE"));
 
     m_slice_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Left, FromDIP(15));
-    m_slice_btn->SetCornerRadius(FromDIP(12));
+    m_slice_btn->SetCornerRadius(FromDIP(8));
     m_slice_btn->SetExtraSize(wxSize(FromDIP(38), FromDIP(10)));
     m_slice_btn->SetMinSize(wxSize(-1, FromDIP(24)));
 
     m_slice_option_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Center);
-    m_slice_option_btn->SetCornerRadius(FromDIP(12));
+    m_slice_option_btn->SetCornerRadius(FromDIP(8));
     m_slice_option_btn->SetExtraSize(wxSize(FromDIP(10), FromDIP(10)));
     m_slice_option_btn->SetIconOffset(FromDIP(2));
     m_slice_option_btn->SetMinSize(wxSize(FromDIP(24), FromDIP(24)));
 
     m_print_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Left, FromDIP(15));
-    m_print_btn->SetCornerRadius(FromDIP(12));
+    m_print_btn->SetCornerRadius(FromDIP(8));
     m_print_btn->SetExtraSize(wxSize(FromDIP(38), FromDIP(10)));
     m_print_btn->SetMinSize(wxSize(-1, FromDIP(24)));
 
     m_print_option_btn->SetTextLayout(SideButton::EHorizontalOrientation::HO_Center);
-    m_print_option_btn->SetCornerRadius(FromDIP(12));
+    m_print_option_btn->SetCornerRadius(FromDIP(8));
     m_print_option_btn->SetExtraSize(wxSize(FromDIP(10), FromDIP(10)));
     m_print_option_btn->SetIconOffset(FromDIP(2));
     m_print_option_btn->SetMinSize(wxSize(FromDIP(24), FromDIP(24)));

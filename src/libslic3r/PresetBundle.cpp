@@ -44,6 +44,7 @@ static std::vector<std::string> s_project_options {
 
 //BBS: add BBL as default
 //Meta3D: Default printer declaration, is working don't touch
+
 const char *PresetBundle::BBL_BUNDLE = "Meta3D";
 const char *PresetBundle::BBL_DEFAULT_PRINTER_MODEL = "MyKlipper 0.4 nozzle";
 const char *PresetBundle::BBL_DEFAULT_PRINTER_VARIANT = "0.4";

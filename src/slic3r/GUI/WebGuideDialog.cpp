@@ -588,7 +588,7 @@ int GuideFrame::SaveProfile()
 
     //finish
     m_MainPtr->app_config->set(std::string(m_SectionName.mb_str()), "finish", "1");
-    //wxGetApp().mainframe->output_through_framename(std::string(m_SectionName.mb_str()));
+   
     m_MainPtr->app_config->save();
 
     //Load BBS Conf
@@ -704,7 +704,7 @@ int GuideFrame::SaveProfile()
                     boost::trim(selected);
                 }
                 else {
-                    //wxGetApp().mainframe->output_through_framename(model_name);
+                    
                     m_appconfig_new.set_variant(vendor_name, model_name, selected, "true");
                     //m_appconfig_new.set_variant(vendor_name, "Generic Meta X - MIRROR", selected, "true");
                     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format("vendor_name %1%, model_name %2%, nozzle %3% selected")%vendor_name %model_name %selected;

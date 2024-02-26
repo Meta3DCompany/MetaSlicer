@@ -4,7 +4,7 @@
     "name": "Meta3D XPro - COPY",
     "from": "system",
     "instantiation": "true",
-    "inherits": "fdm_wanhao_common",
+    "inherits": "fdm_klipper_common",
     "printer_model": "Meta3D XPro - COPY",
     "nozzle_diameter": [
       "0.4"

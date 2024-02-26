@@ -1030,7 +1030,7 @@ void PlaterPresetComboBox::update()
 
             if (is_selected) {
                 flag = true;
-                //wxGetApp().mainframe->output_through_framename(333);
+                
                 tooltip = get_tooltip(preset);
                 selected_system_preset = get_preset_name(preset);
                

@@ -1096,6 +1096,7 @@ void GUI_App::post_init()
         plater_->select_view_3D("3D");
         //BBS init the opengl resource here
 //#ifdef __linux__
+
         if (plater_->canvas3D()->get_wxglcanvas()->IsShownOnScreen()&&plater_->canvas3D()->make_current_for_postinit()) {
 //#endif
             Size canvas_size = plater_->canvas3D()->get_canvas_size();
@@ -2459,6 +2460,8 @@ bool GUI_App::on_init_inner()
     }
 
     BBLSplashScreen * scrn = nullptr;
+    //Meta3D: To close the splash screen
+    //app_config->get("show_splash_screen") == "true"
     if (app_config->get("show_splash_screen") == "true") {
         // make a bitmap with dark grey banner on the left side
         //BBS make BBL splash screen bitmap

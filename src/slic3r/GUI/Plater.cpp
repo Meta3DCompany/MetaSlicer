@@ -181,7 +181,8 @@ namespace GUI {
 std::vector<Model> modelx;
 bool idex_toggle = false;
 LoadStrategy m_strategy = LoadStrategy::Default;
-int varvar = 0;
+bool load_in_mirror = false;
+int stupid = 0;
 
 Coordinates::Coordinates()
 {}
@@ -264,7 +265,7 @@ void Plater::set_idex_copy()
     /*
      if(!idex_toggle)
     {
-        int temp_index = 0;
+        int temp_index = 0 ;
         if(idex_files_vector.empty())
             return;
 
@@ -293,13 +294,23 @@ void Plater::set_idex_copy()
 }
 const LoadStrategy& Plater::get_load_strategy(){
     
+
     return m_strategy;
 }
 
 int Plater::get_load_offset()
 {
-    
     return load_offset;
+}
+void Plater::set_bed_dims(Vec3d bed_dims)
+{
+    this->bed_dims=bed_dims;
+}
+
+const Vec3d Plater::get_bed_dims()
+{
+
+    return bed_dims;
 }
 
 bool Plater::get_idex_copy()
@@ -700,7 +711,7 @@ Sidebar::Sidebar(Plater *parent)
             // p->editing_filament = -1;
             // wxGetApp().params_dialog()->Popup();
             // wxGetApp().get_tab(Preset::TYPE_FILAMENT)->restore_last_select_item();
-           // wxGetApp().mainframe->output_through_framename(323);
+           
             wxGetApp().run_wizard(ConfigWizard::RR_USER, ConfigWizard::SP_PRINTERS); //Meta3D: Open printer selection dialog
             });
 
@@ -2093,6 +2104,7 @@ struct Plater::priv
     Slic3r::GCodeProcessorResult gcode_result;
     std::vector<fs::path> idex_files;
     std::vector<std::vector<fs::path>> idex_files_vector;
+    std::vector<std::vector<fs::path>> one_offset_vector; //Meta3D: Terrible name, it is for adding to model in the idex presets
     // GUI elements
     AuiMgr m_aui_mgr;
     wxString m_default_window_layout;
@@ -2176,7 +2188,7 @@ struct Plater::priv
     priv(Plater *q, MainFrame *main_frame);
     ~priv();
 
-
+    void on_select_idex();
     bool need_update() const { return m_need_update; }
     void set_need_update(bool need_update) { m_need_update = need_update; }
 
@@ -2286,7 +2298,7 @@ struct Plater::priv
     BoundingBox scaled_bed_shape_bb() const;
 
     // BBS: backup & restore
-    std::vector<size_t> load_files(const std::vector<fs::path>& input_files, LoadStrategy strategy, bool ask_multi = false, int index = -1);
+    std::vector<size_t> load_files(const std::vector<fs::path>& input_files, LoadStrategy strategy, bool ask_multi = false, int index = -1, bool load_to_idex_machine = false);
     std::vector<size_t> load_model_objects(const ModelObjectPtrs& model_objects, bool allow_negative_z = false, bool split_object = false, LoadStrategy strategy = LoadStrategy::Default, int index =-1);
 
     fs::path get_export_file_path(GUI::FileType file_type);
@@ -2451,9 +2463,9 @@ struct Plater::priv
     void on_action_slice_all(SimpleEvent&);
     //Meta3D: Idex copy function declaration
 
-    void load_idex(LoadStrategy strategy);
+    void load_idex(LoadStrategy strategy, bool load_to_idex_machine=false);
     void load_idex_copy();
-    void remove_idex_mirror();
+    void remove_idex();
     void on_action_idex_copy(SimpleEvent&);
     void on_action_publish(wxCommandEvent &evt);
     void on_action_print_plate(SimpleEvent&);
@@ -2633,9 +2645,7 @@ bool PlaterDropTarget::OnDropFiles(wxCoord x, wxCoord y, const wxArrayString &fi
 
     bool res = m_plater.load_files(filenames);
     //Meta3D: Load second 
-    //wxGetApp().mainframe->plater();
-    //wxGetApp().mainframe->plater()->load_files(filenames);
-    //wxGetApp().mainframe->output_through_framename(x);
+   
     m_mainframe.update_title();
     return res;
 }
@@ -2669,7 +2679,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     , partplate_list(this->q, &model)
 {
     m_is_dark = wxGetApp().app_config->get("dark_color_mode") == "1";
-
+     //Meta3D : Configure idex loading 
     m_aui_mgr.SetManagedWindow(q);
     m_aui_mgr.SetDockSizeConstraint(1, 1);
     //m_aui_mgr.GetArtProvider()->SetMetric(wxAUI_DOCKART_PANE_BORDER_SIZE, 0);
@@ -2778,8 +2788,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 
     menus.init(q);
 
-
-    // Events:
+  
 
     if (wxGetApp().is_editor()) {
         // Preset change event
@@ -3110,6 +3119,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     //}
     update_sidebar(true);
     model_idex = model;
+    on_select_idex();
 }
 
 Plater::priv::~priv()
@@ -3435,19 +3445,29 @@ std::string read_binary_stl(const std::string& filename) {
 
 
 // BBS: backup & restore
-std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_files, LoadStrategy strategy, bool ask_multi, int index)
+std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_files, LoadStrategy strategy, bool ask_multi, int index, bool load_to_idex_machine)
 {   
+    
 
+    std::string preset_name = wxGetApp().preset_bundle->printers.get_selected_preset().name;
 
-   
-
+    if((preset_name=="Meta3D XPro - MIRROR" ||preset_name=="Meta3D XPro - COPY")&& !load_to_idex_machine)
+    {
+        remove_idex();
+        load_in_mirror = true;
+        
+    }
     if(!(strategy == LoadStrategy::IdexCopy|| strategy ==LoadStrategy::IdexMirror))     
     {
         idex_files_vector.push_back(input_files);
-        //load_offset++;
     }
 
 
+
+    
+         
+    //std::string preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias(preset_type,Preset::remove_suffix_modified(combo->GetString(selection).ToUTF8().data()));
+   
     std::vector<size_t> empty_result;
     bool dlg_cont = true;
     bool is_user_cancel = false;
@@ -4290,12 +4310,23 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
         }
     }
 
-     if(!(strategy == LoadStrategy::IdexCopy ||strategy == LoadStrategy::IdexMirror))     
+    
+    
+    if(!(strategy == LoadStrategy::IdexCopy ||strategy == LoadStrategy::IdexMirror)&&!load_to_idex_machine)     
     {
         q->load_offset++;
-        //wxGetApp().mainframe->output_through_framename(44);
     }
-    //wxGetApp().mainframe->output_through_framename(std::to_string(obj_idxs.size()));
+    
+    if(!load_to_idex_machine){
+        if((preset_name=="Meta3D XPro - MIRROR"))
+        {
+            load_idex(LoadStrategy::IdexMirror, load_to_idex_machine);
+        }
+        else if(preset_name=="Meta3D XPro - COPY"){
+            load_idex(LoadStrategy::IdexCopy, load_to_idex_machine);
+        }
+    }
+
     return obj_idxs;
 }
 
@@ -4313,11 +4344,12 @@ void Plater::test(double d)
 std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& model_objects, bool allow_negative_z, bool split_object, LoadStrategy strategy,int index)
 {
     const Vec3d bed_size = Slic3r::to_3d(this->bed.build_volume().bounding_volume2d().size(), 1.0) - 2.0 * Vec3d::Ones();
-    wxGetApp().mainframe->output_through_framename(std::to_string(bed_size.x()));
+    
+    q->set_bed_dims(bed_size);
     if(idex_toggle)
-        remove_idex_mirror();
-
-
+        remove_idex();
+    
+    
 #ifndef AUTOPLACEMENT_ON_LOAD
     // bool need_arrange = false;
 #endif /* AUTOPLACEMENT_ON_LOAD */
@@ -4333,7 +4365,7 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& mode
         object->sort_volumes(true);
         std::string object_name = object->name.empty() ? fs::path(object->input_file).filename().string() : object->name;
         obj_idxs.push_back(obj_count++);
-
+        
         if (model_object->instances.empty()) {
 #ifdef AUTOPLACEMENT_ON_LOAD
             object->center_around_origin();
@@ -4426,23 +4458,28 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& mode
         //Meta3D: Very very ugly if statements, i am sorry 
         if(strategy == LoadStrategy::IdexMirror)
         {
-            GLVolume* v =q->canvas3D()->get_volumes().volumes[index];
-            auto& volumes = q->canvas3D()->get_volumes_not_const().volumes;
-            Vec3d xd = v->get_instance_transformation().get_offset();
-            Vec3d instance_rotation = v->get_instance_transformation().get_rotation();
-            Vec3d instance_scaling = v->get_instance_transformation().get_scaling_factor();
-            instance->printable = false;
-            instance->set_scaling_factor(instance_scaling);
-            instance->set_rotation(instance_rotation);
-            instance->set_mirror({ -1.0, 1.0, 1.0 });
-            displacement = {bed_size.x() - xd.x(),xd.y(),xd.z()};
-            //m_strategy = LoadStrategy::IdexMirror;
+            if(load_in_mirror&&(index ==q->load_offset - 1))
+            {
+                auto empty_cell = wxGetApp().plater()->canvas3D()->get_nearest_empty_cell({start_point(0), start_point(1)});
+                displacement    = {empty_cell.x(), empty_cell.y(), offset(2)};
+                
+            }
+            else{
+                GLVolume* v =q->canvas3D()->get_volumes().volumes[index];
+                Vec3d xd = v->get_instance_transformation().get_offset();
+                Vec3d instance_rotation = v->get_instance_transformation().get_rotation();
+                Vec3d instance_scaling = v->get_instance_transformation().get_scaling_factor();
+                instance->printable = false;
+                instance->set_scaling_factor(instance_scaling);
+                instance->set_rotation(instance_rotation);
+                instance->set_mirror({ -1.0, 1.0, 1.0 });
+                displacement = {bed_size.x() - xd.x(),xd.y(),xd.z()};
+            }
 
         }
         else if(strategy == LoadStrategy::IdexCopy)
         {
             GLVolume* v =q->canvas3D()->get_volumes().volumes[index];
-            auto& volumes = q->canvas3D()->get_volumes_not_const().volumes;
             Vec3d xd = v->get_instance_transformation().get_offset();
             Vec3d instance_rotation = v->get_instance_transformation().get_rotation();
             Vec3d instance_scaling = v->get_instance_transformation().get_scaling_factor();
@@ -4450,13 +4487,10 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& mode
             instance->set_scaling_factor(instance_scaling);
             instance->set_rotation(instance_rotation);
             displacement = {(bed_size.x()/2) + xd.x(),xd.y(),xd.z()};
-            //m_strategy = LoadStrategy::IdexCopy;
         }
         else if (plate_empty){
             
             displacement = {start_point(0), start_point(1), offset(2)};
-            
-            //wxGetApp().mainframe->output_through_framename(offset(2));
         }
         else {
             auto empty_cell = wxGetApp().plater()->canvas3D()->get_nearest_empty_cell({start_point(0), start_point(1)});
@@ -4500,7 +4534,7 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& mode
   
     this->schedule_background_process();
     int fd = wxGetApp().plater()->canvas3D()->get_volumes_count();
-    // wxGetApp().mainframe->output_through_framename(static_cast<double>(temp));
+    
   
     //wxGetApp().plater()->canvas3D()->get_selection().remove(0);
     
@@ -4728,7 +4762,7 @@ void Plater::priv::remove(size_t obj_idx)
 {
     if (view3D->is_layers_editing_enabled())
         view3D->enable_layers_editing(false);
-
+   
     m_worker.cancel_all();
     model.delete_object(obj_idx);
     //BBS: notify partplate the instance removed
@@ -6390,7 +6424,7 @@ void Plater::priv::on_select_preset(wxCommandEvent &evt)
         }
         else 
         {
-            remove_idex_mirror();
+            remove_idex();
         }
         if(!(preset_name == "Meta3D XPro - COPY" ||preset_name == "Meta3D XPro - MIRROR"))
             m_strategy = LoadStrategy::Default;
@@ -6944,44 +6978,95 @@ void Plater::priv::on_action_slice_all(SimpleEvent&)
 }
 
 //Meta3D: Add 3mf support
+void Plater::priv::on_select_idex()
+{
+    std::string preset_name = wxGetApp().preset_bundle->printers.get_selected_preset().name;
+    if(preset_name == "Meta3D XPro - MIRROR")
+    {
+         stupid++;
+        idex_files_vector.clear();
+        int index = 0;
+        for(auto& object : model.objects)
+        {
+            fs::path path(model.objects[index]->input_file);
+            std::vector<fs::path> temp;
+            temp.push_back(path);
+            idex_files_vector.push_back(temp);
+            index++;
+           
+        }
+        load_idex(LoadStrategy::IdexMirror);
+        m_strategy = LoadStrategy::IdexMirror;
+    }
+    else if(preset_name == "Meta3D XPro - COPY"){
+         stupid++;
+        idex_files_vector.clear();
+        int index = 0;
+        for(auto& object : model.objects)
+        {
+            fs::path path(model.objects[index]->input_file);
+            std::vector<fs::path> temp;
+            temp.push_back(path);
+            idex_files_vector.push_back(temp);
+            index++;
+        }
+        load_idex(LoadStrategy::IdexCopy);
+        m_strategy = LoadStrategy::IdexCopy;
+    }
+    else 
+    {
+        remove_idex();
+    }
 
-void Plater::priv::load_idex(LoadStrategy strategy)
+    if(!(preset_name == "Meta3D XPro - COPY" ||preset_name == "Meta3D XPro - MIRROR"))
+        m_strategy = LoadStrategy::Default;
+
+}
+void Plater::priv::load_idex(LoadStrategy strategy, bool load_to_idex_machine)
 {
     //wxGetApp().ma
     int temp_index = 0;
     if(idex_files_vector.empty())
         return;
+    if(partplate_list.get_curr_plate()->empty())
+        return;
 
     for(auto& load: idex_files_vector)
     {
-        load_files(load, strategy,false, temp_index);
+        load_files(load, strategy,false, temp_index,true);
         temp_index++;
     }
     idex_toggle = true;
-    
+    update();
 }
 
-void Plater::priv::remove_idex_mirror()
+
+
+void Plater::priv::remove_idex()
 {
     if(!idex_toggle)
         return;
 
-    //wxGetApp().mainframe->output_through_framename(std::to_string(q->load_offset));
+   
     for(int i = q->load_offset; i<2* q->load_offset;i++)
             remove(q->load_offset);
     
-
-    //remove(1);
-    
+    update();    
     idex_toggle = false;
 }
 
 void Plater::priv::on_action_idex_copy(SimpleEvent&)
-{   
-    
-    std::string preset_name = wxGetApp().preset_bundle->printers.get_selected_preset().name;
+{
 
-    //wxGetApp().mainframe->output_through_framename(preset_name);
+    
+    wxGetApp().mainframe->output_through_framename(std::to_string(stupid));
+    //std::string preset_name = wxGetApp().preset_bundle->printers.get_selected_preset().name;
+    //model.objects.erase();
+    
+    //size_t a = 0;
+    //model.delete_object(a);
+    //update();
+
     /*
     if(!idex_toggle)
     {
@@ -6996,23 +7081,23 @@ void Plater::priv::on_action_idex_copy(SimpleEvent&)
 
         }
         idex_toggle = true;
-        //wxGetApp().mainframe->output_through_framename(std::to_string(q->canvas3D()->get_volumes().volumes.size()));
+        
 
     }
-    */
-    //if(idex_toggle)
-   // {
-        //wxGetApp().mainframe->output_through_framename(load_offset);
-        for(int i = q->load_offset; i<2* q->load_offset;i++)
-            remove(q->load_offset);
+    
+    if(idex_toggle)
+    {
+       
+        //for(int i = q->load_offset; i<2* q->load_offset;i++)
+        //    remove(q->load_offset);
       
 
-        //idex_toggle = false;
-    //}
+        idex_toggle = false;
+    }
     //wxGetApp().plater()->p->load_offset;
+    */
 
-
-    //wxGetApp().mainframe->output_through_framename(offset);
+    
     //idex_files_vector[1].size();
 
 
@@ -7052,7 +7137,7 @@ void Plater::priv::on_action_idex_copy(SimpleEvent&)
                     auto start_point = this->bed.build_volume().bounding_volume2d().center();
                     GLVolume* v = q->canvas3D()->get_volumes().volumes[index];
                     index++;  
-                    //wxGetApp().mainframe->output_through_framename( q->canvas3D()->get_volumes().volumes.size());
+                    
                     Vec3d xd = v->get_instance_transformation().get_offset();
                     auto offset = instance->get_offset();
                     //instance->set_offset({bed_size.x()-xd.x() + 2,xd.y(), xd.z()});  
@@ -7067,8 +7152,7 @@ void Plater::priv::on_action_idex_copy(SimpleEvent&)
         //Vec2d vecvec;   
         //vecvec = this->bed.build_volume().printable_area();
              
-        //wxGetApp().mainframe->output_through_framename(bed_size.y());
-        //wxGetApp().mainframe->output_through_framename(dumb);
+        
         
         //std::vector<GLVolume*> *ve = &(q->canvas3D()->get_volumes_not_const().volumes);
         //ve->erase(ve->begin());
@@ -10647,10 +10731,25 @@ void Plater::set_selected_visible(bool visible)
 
 void Plater::remove_selected()
 {
+   
+    std::string preset_name = wxGetApp().preset_bundle->printers.get_selected_preset().name;
     /*if (p->get_selection().is_empty())
         return;*/
+    if(preset_name == "Meta3D XPro - MIRROR"||preset_name == "Meta3D XPro - COPY")
+    {
+        remove(p->get_curr_selection().get_object_idx()+get_load_offset());
+        
+    }
+    
+    //p->idex_files_vector;
+   
+    p->idex_files_vector.erase(p->idex_files_vector.begin()+load_offset-1);
+    load_offset--;
+    //wxGetApp().mainframe->output_through_framename(std::to_string(p->idex_files_vector.size()));
     if (p->get_curr_selection().is_empty())
         return;
+    
+    //p->get_curr_selection().get_object_idx();
 
     // BBS: check before deleting object
     if (!p->can_delete())
