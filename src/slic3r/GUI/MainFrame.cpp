@@ -946,7 +946,7 @@ void MainFrame::show_option(bool show)
             m_print_btn->Hide();
             m_slice_option_btn->Hide();
             m_print_option_btn->Hide();
-            m_idex_alpha->Hide();
+            //m_idex_alpha->Hide();
             Layout();
         }
     } else {
@@ -955,7 +955,7 @@ void MainFrame::show_option(bool show)
             m_print_btn->Show();
             m_slice_option_btn->Show();
             m_print_option_btn->Show();
-            m_idex_alpha->Show();
+            //m_idex_alpha->Show();
             Layout();
         }
     }
@@ -1497,15 +1497,15 @@ wxBoxSizer* MainFrame::create_side_tools()
 
     // m_publish_btn = new Button(this, _L("Upload"), "bar_publish", 0, FromDIP(16));
     m_slice_btn = new SideButton(this, _L("Slice plate"), "");
-    m_idex_alpha = new Button(this, _L("IDEX"), "");
+    //m_idex_alpha = new Button(this, _L("IDEX"), "");
     StateColor btn_bg(
         std::pair<wxColour, int>(wxColour(255, 174, 0  ), StateColor::Pressed),
         std::pair<wxColour, int>(wxColour(55, 55, 55  ), StateColor::Hovered),
         std::pair<wxColour, int>(wxColour(255, 174, 0 ), StateColor::Normal)
     );
     StateColor btn_bd(std::pair<wxColour, int>(wxColour(255, 174, 0 ), StateColor::Normal));
-    m_idex_alpha->SetBackgroundColor(btn_bg);
-    m_idex_alpha->SetBorderColor(btn_bd);
+    //m_idex_alpha->SetBackgroundColor(btn_bg);
+    //m_idex_alpha->SetBorderColor(btn_bd);
     m_slice_option_btn = new SideButton(this, "", "sidebutton_dropdown", 0, FromDIP(14));
     m_print_btn = new SideButton(this, _L("Print plate"), "");
     m_print_option_btn = new SideButton(this, "", "sidebutton_dropdown", 0, FromDIP(14));
@@ -1513,12 +1513,12 @@ wxBoxSizer* MainFrame::create_side_tools()
     update_side_button_style();
     // m_publish_btn->Hide();
     m_slice_option_btn->Enable();
-    m_idex_alpha->Enable();
-    m_idex_alpha->Show();
+   // m_idex_alpha->Enable();
+   // m_idex_alpha->Show();
     m_print_option_btn->Enable();
     // sizer->Add(m_publish_btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
     // sizer->Add(FromDIP(15), 0, 0, 0, 0);
-    sizer->Add(m_idex_alpha, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
+    //sizer->Add(m_idex_alpha, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
     sizer->Add(FromDIP(10), 0, 0, 0, 0);
     sizer->Add(m_slice_option_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
     sizer->Add(m_slice_btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
@@ -1545,11 +1545,11 @@ wxBoxSizer* MainFrame::create_side_tools()
     //     });
     // });
     //Meta3D: Idex button is binded
-    m_idex_alpha->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event)
-        {
+    //m_idex_alpha->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event)
+    //    {
            
-            wxPostEvent(m_plater, SimpleEvent(EVT_IDEX_COPY));
-        });
+    //        wxPostEvent(m_plater, SimpleEvent(EVT_IDEX_COPY));
+    //    });
     m_slice_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event)
         {
             //this->m_plater->select_view_3D("Preview");
